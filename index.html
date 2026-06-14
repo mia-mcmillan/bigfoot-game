@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Sneaky Bigfoot</title>
 
   <!-- PWA -->
@@ -53,6 +53,19 @@
     <!-- Message ticker -->
     <div id="ticker"></div>
 
+    <!-- Touch controls (iPad / mobile) -->
+    <div id="touch-controls">
+      <div id="joystick">
+        <div id="joystick-thumb"></div>
+      </div>
+      <div id="action-buttons">
+        <button id="btn-sneak" class="touch-btn" aria-label="Sneak">🥷<span>Sneak</span></button>
+        <button id="btn-grab" class="touch-btn" aria-label="Grab or interact">🖐<span>Grab</span></button>
+        <button id="btn-eat" class="touch-btn" aria-label="Eat a snack">🍖<span>Eat</span></button>
+        <button id="btn-disguise" class="touch-btn" aria-label="Disguise">🧢<span>Disguise</span></button>
+      </div>
+    </div>
+
     <!-- Start / story screen -->
     <div id="overlay" class="screen">
       <div class="panel">
@@ -75,6 +88,7 @@
           <div><kbd>F</kbd> — Eat a snack yourself</div>
           <div><kbd>Q</kbd> — Toss on disguise (at the laundry line)</div>
         </div>
+        <p class="touch-hint">📱 On iPad, use the on-screen joystick and buttons — no keyboard needed.</p>
         <button id="start-btn">Start Sneaking</button>
       </div>
     </div>

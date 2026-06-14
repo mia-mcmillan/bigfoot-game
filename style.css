@@ -182,6 +182,12 @@ canvas {
 .story p { margin-bottom: 8px; }
 .story strong { color: var(--gold); }
 
+.touch-hint {
+  font-size: 13px;
+  color: var(--gold);
+  margin-bottom: 16px;
+}
+
 .controls-help {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -215,3 +221,104 @@ button {
 button:hover { transform: translateY(-2px); filter: brightness(1.08); }
 
 .hidden { display: none !important; }
+
+/* ---------- Start screen art ---------- */
+#overlay {
+  background:
+    linear-gradient(rgba(8, 14, 6, 0.55), rgba(8, 14, 6, 0.85)),
+    url("assets/title.jpg") center / cover no-repeat;
+}
+
+/* ---------- Touch controls (iPad / mobile) ---------- */
+#touch-controls {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none; /* only children capture touches */
+}
+
+#joystick {
+  position: absolute;
+  left: 24px;
+  bottom: 24px;
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  background: rgba(20, 33, 15, 0.35);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  pointer-events: auto;
+  touch-action: none;
+}
+#joystick-thumb {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: rgba(233, 196, 106, 0.85);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  transform: translate(-50%, -50%);
+}
+
+#action-buttons {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: 12px;
+  pointer-events: none;
+}
+.touch-btn {
+  pointer-events: auto;
+  touch-action: none;
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  background: rgba(20, 33, 15, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  color: #fff;
+  font-size: 26px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.touch-btn span {
+  font-size: 10px;
+  font-weight: bold;
+  margin-top: 2px;
+  opacity: 0.85;
+}
+.touch-btn:hover { transform: none; filter: none; }
+.touch-btn:active { filter: brightness(1.25); }
+#btn-sneak.active {
+  background: rgba(233, 196, 106, 0.85);
+  color: #2a2410;
+}
+
+/* Hide touch UI on desktops with a precise pointer (keyboard play). */
+@media (hover: hover) and (pointer: fine) {
+  #touch-controls { display: none; }
+}
+
+/* ---------- Responsive: scale the fixed-resolution shell to the viewport ---------- */
+@media (pointer: coarse), (max-width: 1000px), (max-height: 640px) {
+  html, body { overflow: hidden; touch-action: none; overscroll-behavior: none; }
+  #game-shell {
+    width: min(100vw, calc(100vh * 960 / 600));
+    height: auto;
+    aspect-ratio: 960 / 600;
+    border: none;
+    border-radius: 0;
+  }
+  canvas {
+    width: 100%;
+    height: 100%;
+  }
+}

@@ -5,7 +5,12 @@
   "private": true,
   "scripts": {
     "check": "node --check game.js",
-    "test": "node --check game.js && node test/smoke-test.js"
+    "test": "node --check game.js && node test/smoke-test.js",
+    "gen-art": "node tools/gen-art.js",
+    "process-art": "node tools/process-art.js"
+  },
+  "devDependencies": {
+    "jimp": "^1.6.0"
   },
   "license": "MIT"
 }

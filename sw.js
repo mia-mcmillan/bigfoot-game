@@ -1,6 +1,6 @@
 /* Service worker for Sneaky Bigfoot — offline-capable app shell.
  * Bump CACHE on any asset change to force clients to refetch. */
-const CACHE = "sneaky-bigfoot-v1";
+const CACHE = "sneaky-bigfoot-v2";
 
 const ASSETS = [
   "./",
@@ -8,6 +8,7 @@ const ASSETS = [
   "./style.css",
   "./game.js",
   "./manifest.json",
+  "./assets/title.jpg",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/icon-180.png",

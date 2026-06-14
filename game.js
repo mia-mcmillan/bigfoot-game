@@ -56,6 +56,13 @@
     return false;
   }
 
+  // Touch / virtual controls feed the same movement + actions as the keyboard.
+  // touch.mx/my is an analog vector in [-1,1]; touch.sneak mirrors Shift.
+  const touch = { mx: 0, my: 0, moving: false, sneak: false };
+  function sneaking() {
+    return !!keys["shift"] || touch.sneak;
+  }
+
   // ---------- World geometry ----------
   // Solid obstacles (AABB). Trees are added programmatically.
   const obstacles = [];
@@ -355,7 +362,7 @@
 
       let range = VIEW_RANGE;
       if (player.disguised) range *= 0.45;
-      if (keys["shift"]) range *= 0.6; // sneaking shrinks how far you're noticed
+      if (sneaking()) range *= 0.6; // sneaking shrinks how far you're noticed
 
       let canSee = false;
       if (d < range) {
@@ -374,7 +381,7 @@
         r.alert = clamp(r.alert + dt * 2.2, 0, 1);
         // closer + not sneaking + not disguised => faster suspicion
         let rate = 24;
-        if (keys["shift"]) rate *= 0.5;
+        if (sneaking()) rate *= 0.5;
         if (player.disguised) rate *= 0.25;
         rate *= clamp(1.4 - d / range, 0.4, 1.4);
         player.suspicion = clamp(player.suspicion + rate * dt, 0, 100);
@@ -562,28 +569,35 @@
   // ---------- Update ----------
   let lastT = performance.now();
   function update(dt) {
-    // --- movement ---
+    // --- movement (touch joystick takes priority, else keyboard) ---
     let dx = 0, dy = 0;
-    if (keys["w"] || keys["arrowup"]) dy -= 1;
-    if (keys["s"] || keys["arrowdown"]) dy += 1;
-    if (keys["a"] || keys["arrowleft"]) dx -= 1;
-    if (keys["d"] || keys["arrowright"]) dx += 1;
+    if (touch.moving) {
+      dx = touch.mx; dy = touch.my;
+    } else {
+      if (keys["w"] || keys["arrowup"]) dy -= 1;
+      if (keys["s"] || keys["arrowdown"]) dy += 1;
+      if (keys["a"] || keys["arrowleft"]) dx -= 1;
+      if (keys["d"] || keys["arrowright"]) dx += 1;
+    }
 
-    const moving = dx !== 0 || dy !== 0;
+    const mag = Math.hypot(dx, dy);
+    const moving = mag > 0.06;
     if (moving) {
-      const len = Math.hypot(dx, dy) || 1;
-      dx /= len; dy /= len;
-      player.dir = { x: dx, y: dy };
+      const dirX = dx / mag, dirY = dy / mag;
+      player.dir = { x: dirX, y: dirY };
 
+      const sneak = sneaking();
       let speed = SPEED_WALK;
-      if (keys["shift"]) speed = SPEED_SNEAK;          // quiet, low suspicion
+      if (sneak) speed = SPEED_SNEAK;                   // quiet, low suspicion
       else if (keys["x"] && player.energy > 5) speed = SPEED_RUN; // sprint, burns energy
 
-      moveWithCollision(player, dx * speed, dy * speed);
-      player.step += speed;
+      // analog throttle for touch (push the stick further = move faster)
+      const throttle = touch.moving ? Math.min(1, mag) : 1;
+      moveWithCollision(player, dirX * speed * throttle, dirY * speed * throttle);
+      player.step += speed * throttle;
 
       // energy: sneaking costs little, running costs more
-      const drain = keys["shift"] ? 1.5 : 3.0;
+      const drain = sneak ? 1.5 : 3.0;
       player.energy = clamp(player.energy - drain * dt, 0, 100);
     } else {
       // resting regains a little energy
@@ -982,7 +996,7 @@
   function drawPlayer() {
     drawSasquatch(player.x + player.w / 2, player.y + player.h / 2, 1, true, player.hunger < 25);
     // sneaking puff
-    if (keys["shift"] && state === State.PLAY) {
+    if (sneaking() && state === State.PLAY) {
       ctx.fillStyle = "rgba(255,255,255,0.5)";
       ctx.font = "12px serif";
       ctx.textAlign = "center";
@@ -1176,6 +1190,72 @@
 
   document.getElementById("start-btn").addEventListener("click", startGame);
   document.getElementById("restart-btn").addEventListener("click", startGame);
+
+  // ---------- Touch controls (iPad / mobile) ----------
+  function setupTouchControls() {
+    const stick = document.getElementById("joystick");
+    const thumb = document.getElementById("joystick-thumb");
+    if (stick && thumb) {
+      const RADIUS = 46;
+      let touchId = null;
+      const reset = () => {
+        touch.moving = false; touch.mx = 0; touch.my = 0;
+        thumb.style.transform = "translate(-50%, -50%)";
+      };
+      const setFrom = (clientX, clientY) => {
+        const r = stick.getBoundingClientRect();
+        let ox = clientX - (r.left + r.width / 2);
+        let oy = clientY - (r.top + r.height / 2);
+        const d = Math.hypot(ox, oy);
+        if (d > RADIUS) { ox = (ox / d) * RADIUS; oy = (oy / d) * RADIUS; }
+        touch.mx = ox / RADIUS; touch.my = oy / RADIUS; touch.moving = true;
+        thumb.style.transform = `translate(calc(-50% + ${ox}px), calc(-50% + ${oy}px))`;
+      };
+      stick.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        const t = e.changedTouches[0];
+        touchId = t.identifier;
+        setFrom(t.clientX, t.clientY);
+      }, { passive: false });
+      stick.addEventListener("touchmove", (e) => {
+        e.preventDefault();
+        for (const t of e.changedTouches) {
+          if (t.identifier === touchId) setFrom(t.clientX, t.clientY);
+        }
+      }, { passive: false });
+      const end = (e) => {
+        for (const t of e.changedTouches) {
+          if (t.identifier === touchId) { touchId = null; reset(); }
+        }
+      };
+      stick.addEventListener("touchend", end);
+      stick.addEventListener("touchcancel", end);
+    }
+
+    // Action buttons: bind both touch and click so they work on iPad and desktop.
+    const bind = (id, fn) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const fire = (e) => { e.preventDefault(); if (state === State.PLAY) fn(); };
+      el.addEventListener("touchstart", fire, { passive: false });
+      el.addEventListener("click", fire);
+    };
+    bind("btn-grab", handleInteract);
+    bind("btn-disguise", handleDisguise);
+    bind("btn-eat", handleSelfEat);
+
+    const sneakBtn = document.getElementById("btn-sneak");
+    if (sneakBtn) {
+      const toggle = (e) => {
+        e.preventDefault();
+        touch.sneak = !touch.sneak;
+        sneakBtn.classList.toggle("active", touch.sneak);
+      };
+      sneakBtn.addEventListener("touchstart", toggle, { passive: false });
+      sneakBtn.addEventListener("click", toggle);
+    }
+  }
+  setupTouchControls();
 
   // draw a static menu backdrop frame once
   buildWorld();

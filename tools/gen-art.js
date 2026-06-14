@@ -17,7 +17,7 @@ const fs = require("fs");
 const path = require("path");
 
 const KEY = process.env.GEMINI_API_KEY;
-const MODEL = process.env.IMAGE_MODEL || "imagen-3.0-generate-002";
+const MODEL = process.env.IMAGE_MODEL || "gemini-3-pro-image";
 const BASE = "https://generativelanguage.googleapis.com/v1beta";
 const OUT = path.join(__dirname, "..", "assets", "raw");
 
@@ -113,15 +113,22 @@ async function generate(prompt, aspect) {
   }
 
   // --- Gemini generateContent (image modality) ---
-  const res = await fetch(`${BASE}/models/${MODEL}:generateContent?key=${KEY}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
-    }),
-  });
-  const json = await res.json();
+  // Newer image models accept generationConfig.imageConfig.aspectRatio; older
+  // ones reject it, so retry without if the first attempt 400s on that field.
+  async function call(withImageConfig) {
+    const generationConfig = { responseModalities: ["IMAGE"] };
+    if (withImageConfig) generationConfig.imageConfig = { aspectRatio: aspect };
+    const res = await fetch(`${BASE}/models/${MODEL}:generateContent?key=${KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig }),
+    });
+    return { res, json: await res.json() };
+  }
+  let { res, json } = await call(true);
+  if (!res.ok && JSON.stringify(json).match(/imageConfig|aspectRatio|responseModalities/i)) {
+    ({ res, json } = await call(false));
+  }
   if (!res.ok) throw new Error(JSON.stringify(json, null, 2));
   const parts = (((json.candidates || [])[0] || {}).content || {}).parts || [];
   for (const p of parts) {
