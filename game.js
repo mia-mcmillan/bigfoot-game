@@ -235,14 +235,19 @@
     player.backpack = [];
     player.disguised = false;
 
-    // Kids inside the den
+    // Family inside the den: Mama Bigfoot + two kids
     kids.length = 0;
-    const kidNames = ["Mossy", "Pebble", "Fern"];
-    kidNames.forEach((name, i) => {
+    const family = [
+      { name: "Mama", adult: true },
+      { name: "Mossy", adult: false },
+      { name: "Pebble", adult: false },
+    ];
+    family.forEach((m, i) => {
       kids.push({
-        name,
-        x: den.x + 40 + i * 65,
-        y: den.y + 60 + (i % 2) * 40,
+        name: m.name,
+        adult: m.adult,
+        x: den.x + 45 + i * 70,
+        y: den.y + 70 + (i % 2) * 36,
         fed: 35 + Math.random() * 15,
         bob: Math.random() * Math.PI * 2,
       });
@@ -542,7 +547,7 @@
   function checkWin() {
     if (kids.every((k) => k.fed >= 100)) {
       endGame("🌟 Best Papa in Pine Hollow!",
-        `Every little Sasquatch is full and happy. You finished Day ${day} with ` +
+        `Mama and both kids are full and happy. You finished Day ${day} with ` +
         `${player.coins} coins and a belly full of pride. The legend lives on. 🦶`);
     }
   }
@@ -887,12 +892,13 @@
   function drawKids() {
     for (const k of kids) {
       const bobY = Math.sin(k.bob) * 3;
-      drawSasquatch(k.x, k.y + bobY, 0.55, false, k.fed < 30);
+      const scale = k.adult ? 0.82 : 0.55;
+      drawSasquatch(k.x, k.y + bobY, scale, false, k.fed < 30);
       // name + hunger pip
       ctx.fillStyle = "#fff";
       ctx.font = "11px Trebuchet MS";
       ctx.textAlign = "center";
-      ctx.fillText(k.name, k.x, k.y - 26);
+      ctx.fillText(k.adult ? "💗 " + k.name : k.name, k.x, k.y - (k.adult ? 38 : 26));
       if (k.fed < 30) {
         ctx.font = "14px serif";
         ctx.fillText("💭🍖", k.x + 22, k.y - 28);
@@ -1136,7 +1142,7 @@
     let html = "";
     for (const k of kids) {
       html += `<div class="family-member">
-        <span>🦶 ${k.name}</span>
+        <span>${k.adult ? "💗" : "🦶"} ${k.name}</span>
         <div class="mini-bar"><div class="mini-fill" style="width:${k.fed}%"></div></div>
       </div>`;
     }

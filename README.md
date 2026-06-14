@@ -1,8 +1,8 @@
 # 🦶 Sneaky Bigfoot
 
 A top-down stealth life-sim inspired by **Sneaky Sasquatch** — but you play as
-**Papa Bigfoot**, a gentle cryptid raising a family of little Sasquatch in the
-woods of Pine Hollow.
+**Papa Bigfoot**, a gentle cryptid living with **Mama Bigfoot and their two
+kids** in the woods of Pine Hollow.
 
 Sneak through the campground, swipe snacks from picnic tables and berry bushes,
 dodge the patrolling park rangers, earn coins at the general store, and — most
@@ -43,12 +43,12 @@ No build step, no dependencies.
   - Rangers have visible **vision cones** — yellow when calm, red when alerted.
 - **Backpack** holds up to 6 food items. Sell them for **coins** at the 🏪 store,
   or bring them home.
-- **The Family**: your kids (Mossy, Pebble, Fern) get hungrier over time. Return
-  to the 🏕️ den and press `E` to feed them.
+- **The Family**: Mama Bigfoot and your two kids (Mossy & Pebble) get hungrier
+  over time. Return to the 🏕️ den and press `E` to feed them.
 
 ## 🏆 Win / lose
 
-- **Win**: feed all three kids to full.
+- **Win**: feed your whole family (Mama + both kids) to full.
 - **Lose**: get caught by a ranger (suspicion hits 100%), or let your own hunger
   hit zero.
 
