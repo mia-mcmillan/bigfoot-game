@@ -1,0 +1,23 @@
+name: CI
+
+# Syntax-checks game.js and runs the headless gameplay smoke test on every
+# push and pull request, so broken code is caught before it deploys to Pages.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Syntax check + smoke test
+        run: npm test

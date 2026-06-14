@@ -1,0 +1,11 @@
+{
+  "name": "sneaky-bigfoot",
+  "version": "1.0.0",
+  "description": "A Sneaky Sasquatch-style stealth life-sim starring Bigfoot and his family.",
+  "private": true,
+  "scripts": {
+    "check": "node --check game.js",
+    "test": "node --check game.js && node test/smoke-test.js"
+  },
+  "license": "MIT"
+}
