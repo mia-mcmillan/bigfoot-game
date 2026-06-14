@@ -66,9 +66,13 @@ manifest (`manifest.json`) and icons in `icons/`.
 
 ## 🛠️ Tech
 
-Plain HTML5 Canvas + vanilla JavaScript. All art is drawn procedurally with
-canvas shapes and emoji — no external assets.
+Plain HTML5 Canvas + vanilla JavaScript, no framework. Character/prop art is
+generated with the Gemini image API (`tools/gen-art.js`), background-keyed and
+resized with `tools/process-art.js`, and drawn as sprites — with a procedural
+shape fallback if a sprite fails to load. Playable with keyboard or on-screen
+touch controls (iPad/mobile).
 
-- `index.html` — markup, HUD, and screens
-- `style.css` — styling
-- `game.js` — world generation, entities, ranger AI, stealth detection, rendering
+- `index.html` — markup, HUD, screens, touch controls
+- `style.css` — styling + responsive/touch layout
+- `game.js` — world generation, entities, ranger AI, stealth detection, sprite rendering
+- `assets/sprites/` — generated character & prop art; `assets/raw/` — source renders

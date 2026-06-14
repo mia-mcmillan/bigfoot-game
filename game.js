@@ -26,6 +26,40 @@
   const MAX_CARRY = 6;
   const DAY_LENGTH = 120; // seconds of real time per in-game day
 
+  // ---------- Sprites (with graceful fallback to drawn shapes) ----------
+  const SPRITE_FILES = {
+    bigfoot: "assets/sprites/bigfoot.png",
+    mama: "assets/sprites/mama.png",
+    kid: "assets/sprites/kid.png",
+    ranger: "assets/sprites/ranger.png",
+    tent: "assets/sprites/tent.png",
+    tree: "assets/sprites/tree.png",
+  };
+  const SPRITES = {};
+  if (typeof Image !== "undefined") {
+    for (const [k, src] of Object.entries(SPRITE_FILES)) {
+      const img = new Image();
+      img.src = src;
+      SPRITES[k] = img;
+    }
+  }
+  function spriteReady(k) {
+    const img = SPRITES[k];
+    return !!(img && img.complete && img.naturalWidth > 0);
+  }
+  // Draw a sprite anchored bottom-center at (cx, baseY), sized by height...
+  function drawSpriteH(k, cx, baseY, targetH) {
+    const img = SPRITES[k];
+    const w = targetH * (img.naturalWidth / img.naturalHeight);
+    ctx.drawImage(img, cx - w / 2, baseY - targetH, w, targetH);
+  }
+  // ...or by width.
+  function drawSpriteW(k, cx, baseY, targetW) {
+    const img = SPRITES[k];
+    const h = targetW * (img.naturalHeight / img.naturalWidth);
+    ctx.drawImage(img, cx - targetW / 2, baseY - h, targetW, h);
+  }
+
   // ---------- Game state ----------
   const State = {
     MENU: "menu",
@@ -832,6 +866,13 @@
   }
 
   function drawTrees(canopy) {
+    // With a sprite, draw the whole tree once (in the canopy/overlay pass so it
+    // overhangs entities for depth) and skip the procedural two-pass draw.
+    if (spriteReady("tree")) {
+      if (!canopy) return;
+      for (const t of trees) drawSpriteH("tree", t.x, t.y + 20, 78);
+      return;
+    }
     for (const t of trees) {
       if (!canopy) {
         // trunk
@@ -866,20 +907,24 @@
       ctx.fillStyle = "#7a5230";
       ctx.fillRect(tb.x, tb.y + tb.h - 8, tb.w, 8);
       // tent
-      ctx.fillStyle = "#c1444a";
-      ctx.beginPath();
-      ctx.moveTo(t.x, t.y + t.h);
-      ctx.lineTo(t.x + t.w / 2, t.y);
-      ctx.lineTo(t.x + t.w, t.y + t.h);
-      ctx.closePath();
-      ctx.fill();
-      ctx.fillStyle = "#8f2f35";
-      ctx.beginPath();
-      ctx.moveTo(t.x + t.w / 2, t.y);
-      ctx.lineTo(t.x + t.w / 2 - 12, t.y + t.h);
-      ctx.lineTo(t.x + t.w / 2 + 12, t.y + t.h);
-      ctx.closePath();
-      ctx.fill();
+      if (spriteReady("tent")) {
+        drawSpriteW("tent", t.x + t.w / 2, t.y + t.h + 8, t.w + 36);
+      } else {
+        ctx.fillStyle = "#c1444a";
+        ctx.beginPath();
+        ctx.moveTo(t.x, t.y + t.h);
+        ctx.lineTo(t.x + t.w / 2, t.y);
+        ctx.lineTo(t.x + t.w, t.y + t.h);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = "#8f2f35";
+        ctx.beginPath();
+        ctx.moveTo(t.x + t.w / 2, t.y);
+        ctx.lineTo(t.x + t.w / 2 - 12, t.y + t.h);
+        ctx.lineTo(t.x + t.w / 2 + 12, t.y + t.h);
+        ctx.closePath();
+        ctx.fill();
+      }
       // campfire
       ctx.font = "20px serif";
       ctx.textAlign = "center";
@@ -906,8 +951,18 @@
   function drawKids() {
     for (const k of kids) {
       const bobY = Math.sin(k.bob) * 3;
-      const scale = k.adult ? 0.82 : 0.55;
-      drawSasquatch(k.x, k.y + bobY, scale, false, k.fed < 30);
+      const sk = k.adult ? "mama" : "kid";
+      if (spriteReady(sk)) {
+        const th = k.adult ? 72 : 50;
+        const baseY = k.y + (k.adult ? 27 : 18) + bobY;
+        ctx.fillStyle = "rgba(0,0,0,0.2)";
+        ctx.beginPath();
+        ctx.ellipse(k.x, baseY - 3, k.adult ? 18 : 13, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        drawSpriteH(sk, k.x, baseY, th);
+      } else {
+        drawSasquatch(k.x, k.y + bobY, k.adult ? 0.82 : 0.55, false, k.fed < 30);
+      }
       // name + hunger pip
       ctx.fillStyle = "#fff";
       ctx.font = "11px Trebuchet MS";
@@ -994,7 +1049,25 @@
   }
 
   function drawPlayer() {
-    drawSasquatch(player.x + player.w / 2, player.y + player.h / 2, 1, true, player.hunger < 25);
+    const cx = player.x + player.w / 2;
+    const baseY = player.y + player.h + 6;
+    if (spriteReady("bigfoot")) {
+      const th = 84;
+      // soft shadow under feet
+      ctx.fillStyle = "rgba(0,0,0,0.22)";
+      ctx.beginPath();
+      ctx.ellipse(cx, baseY - 4, 22, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+      drawSpriteH("bigfoot", cx, baseY, th);
+      if (player.disguised) {
+        // pop a camper cap on his head
+        ctx.font = "26px serif";
+        ctx.textAlign = "center";
+        ctx.fillText("🧢", cx, baseY - th + 18);
+      }
+    } else {
+      drawSasquatch(cx, player.y + player.h / 2, 1, true, player.hunger < 25);
+    }
     // sneaking puff
     if (sneaking() && state === State.PLAY) {
       ctx.fillStyle = "rgba(255,255,255,0.5)";
@@ -1006,8 +1079,27 @@
 
   function drawRangers() {
     for (const r of rangers) {
+      const cx = r.x + r.w / 2;
+      const baseY = r.y + r.h + 4;
+      if (spriteReady("ranger")) {
+        const th = 78;
+        ctx.fillStyle = "rgba(0,0,0,0.2)";
+        ctx.beginPath();
+        ctx.ellipse(cx, baseY - 3, 16, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        drawSpriteH("ranger", cx, baseY, th);
+        // alert mark above head
+        if (r.alert > 0.5) {
+          ctx.fillStyle = "#ffd166"; ctx.font = "bold 20px serif"; ctx.textAlign = "center";
+          ctx.fillText("!", cx, baseY - th - 4);
+        } else if (r.alert > 0.15) {
+          ctx.fillStyle = "#fff"; ctx.font = "bold 18px serif"; ctx.textAlign = "center";
+          ctx.fillText("?", cx, baseY - th - 4);
+        }
+        continue;
+      }
       ctx.save();
-      ctx.translate(r.x + r.w / 2, r.y + r.h / 2);
+      ctx.translate(cx, r.y + r.h / 2);
       // shadow
       ctx.fillStyle = "rgba(0,0,0,0.2)";
       ctx.beginPath();
