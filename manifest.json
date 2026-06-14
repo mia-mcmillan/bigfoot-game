@@ -1,0 +1,16 @@
+{
+  "name": "Sneaky Bigfoot",
+  "short_name": "Bigfoot",
+  "description": "A Sneaky Sasquatch-style stealth life-sim. Play as Papa Bigfoot: sneak the campground, swipe snacks, dodge the ranger, and feed your family.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#14210f",
+  "theme_color": "#3a5a40",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

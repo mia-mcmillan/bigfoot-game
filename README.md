@@ -52,6 +52,18 @@ No build step, no dependencies.
 - **Lose**: get caught by a ranger (suspicion hits 100%), or let your own hunger
   hit zero.
 
+## 📲 Install it (PWA)
+
+Sneaky Bigfoot is a Progressive Web App, so you can install it and play offline:
+
+- **Desktop (Chrome/Edge):** click the install icon in the address bar.
+- **Android (Chrome):** menu → *Add to Home screen*.
+- **iOS (Safari):** Share → *Add to Home Screen*.
+
+Once installed it launches in its own window and works with no connection,
+thanks to a service worker (`sw.js`) that caches the app shell, plus a web app
+manifest (`manifest.json`) and icons in `icons/`.
+
 ## 🛠️ Tech
 
 Plain HTML5 Canvas + vanilla JavaScript. All art is drawn procedurally with
