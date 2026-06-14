@@ -36,9 +36,11 @@ No build step, no dependencies.
 
 ## 🧠 Gameplay
 
-- **Hunger** slowly drains — eat snacks (`F`) so you don't pass out.
+- **Hunger** slowly drains — eat snacks (`F`) to top it back up. It never ends
+  the game; a hungry Bigfoot just gets a friendly reminder.
 - **Energy** drops when you move (sprinting costs more); standing still recovers it.
-- **Suspicion** rises when a ranger sees you. Fill it and you're **caught**.
+- **Suspicion** rises when a ranger sees you. Fill it and the ranger simply
+  **shoos you back home** — no harm done, just try sneaking again.
   - Sneak (`Shift`), hide behind **trees**, and wear a **disguise** to stay unseen.
   - Rangers have visible **vision cones** — yellow when calm, red when alerted.
 - **Backpack** holds up to 6 food items. Sell them for **coins** at the 🏪 store,
@@ -46,11 +48,13 @@ No build step, no dependencies.
 - **The Family**: Mama Bigfoot and your two kids (Mossy & Pebble) get hungrier
   over time. Return to the 🏕️ den and press `E` to feed them.
 
-## 🏆 Win / lose
+## 🏆 Goal
+
+This is a **no-fail, kid-friendly** game — Bigfoot can't die or lose.
 
 - **Win**: feed your whole family (Mama + both kids) to full.
-- **Lose**: get caught by a ranger (suspicion hits 100%), or let your own hunger
-  hit zero.
+- Get spotted? The ranger just walks you home. Low on food? You get a nudge.
+  Either way, you keep playing.
 
 ## 📲 Install it (PWA)
 

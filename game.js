@@ -576,13 +576,17 @@
   }
 
   // ---------- Win / lose ----------
+  // Friendly, no-fail consequence: the ranger simply shoos Bigfoot back home.
+  // Nobody gets hurt and no progress is lost.
   function caught() {
     if (state !== State.PLAY) return;
     player.caughtFlash = 1;
-    endGame("🚨 Caught!",
-      `Ranger Dan slapped a "NO BIGFOOT" sign on the campsite and escorted you out. ` +
-      `You brought home ${player.coins} coins before getting spotted. ` +
-      `Sneak smarter — use the trees, sneak with Shift, and grab a disguise!`);
+    player.suspicion = 0;
+    for (const r of rangers) r.alert = 0;
+    // walk him back to the safety of the den entrance
+    player.x = den.x + den.w / 2 - player.w / 2;
+    player.y = den.y + den.h + 30;
+    toast("🚶 The ranger waved you off — scoot back home and try sneaking again!", 2800);
   }
 
   function checkWin() {
@@ -643,17 +647,14 @@
     if (consumePress("q")) handleDisguise();
     if (consumePress("f")) handleSelfEat();
 
-    // --- stats decay ---
+    // --- stats decay (no-fail: hunger never ends the game, just nudges) ---
     player.hunger = clamp(player.hunger - 1.1 * dt, 0, 100);
-    if (player.hunger <= 0) {
-      endGame("😵 Too Hungry!",
-        "Papa Bigfoot ran out of energy and had to crawl home empty-handed. " +
-        "Eat a snack now and then with F!");
-      return;
-    }
-    if (player.energy <= 0 && moving) {
-      // exhausted: hunger drains faster
-      player.hunger = clamp(player.hunger - 1.0 * dt, 0, 100);
+    if (player.hunger < 18) {
+      player.hungerNudge = (player.hungerNudge || 0) - dt;
+      if (player.hungerNudge <= 0) {
+        toast("🍖 Bigfoot's tummy is rumbling — grab a snack and tap Eat!", 2400);
+        player.hungerNudge = 12; // seconds between gentle reminders
+      }
     }
 
     // --- food respawn ---
@@ -719,9 +720,9 @@
       ctx.fillRect(0, 0, VIEW_W, VIEW_H);
     }
 
-    // caught flash
+    // gentle "shooed home" flash (soft, friendly — not a fail state)
     if (player.caughtFlash > 0) {
-      ctx.fillStyle = `rgba(231, 76, 60, ${player.caughtFlash * 0.5})`;
+      ctx.fillStyle = `rgba(255, 224, 130, ${player.caughtFlash * 0.35})`;
       ctx.fillRect(0, 0, VIEW_W, VIEW_H);
     }
 
