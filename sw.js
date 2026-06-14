@@ -1,6 +1,6 @@
 /* Service worker for Sneaky Bigfoot — offline-capable app shell.
  * Bump CACHE on any asset change to force clients to refetch. */
-const CACHE = "sneaky-bigfoot-v3";
+const CACHE = "sneaky-bigfoot-v4";
 
 const ASSETS = [
   "./",

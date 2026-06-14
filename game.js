@@ -48,16 +48,109 @@
     return !!(img && img.complete && img.naturalWidth > 0);
   }
   // Draw a sprite anchored bottom-center at (cx, baseY), sized by height...
-  function drawSpriteH(k, cx, baseY, targetH) {
+  function drawSpriteH(k, cx, baseY, targetH, flip) {
     const img = SPRITES[k];
     const w = targetH * (img.naturalWidth / img.naturalHeight);
-    ctx.drawImage(img, cx - w / 2, baseY - targetH, w, targetH);
+    if (flip) {
+      ctx.save();
+      ctx.translate(cx, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(img, -w / 2, baseY - targetH, w, targetH);
+      ctx.restore();
+    } else {
+      ctx.drawImage(img, cx - w / 2, baseY - targetH, w, targetH);
+    }
   }
   // ...or by width.
   function drawSpriteW(k, cx, baseY, targetW) {
     const img = SPRITES[k];
     const h = targetW * (img.naturalHeight / img.naturalWidth);
     ctx.drawImage(img, cx - targetW / 2, baseY - h, targetW, h);
+  }
+
+  // ---------- Audio (synthesized, no asset files) ----------
+  const audio = { ctx: null, muted: false };
+  function initAudio() {
+    if (audio.ctx) return;
+    const AC = typeof window !== "undefined" && (window.AudioContext || window.webkitAudioContext);
+    if (AC) audio.ctx = new AC();
+  }
+  function tone(freq, dur, type, vol, when, freq2) {
+    if (!audio.ctx || audio.muted) return;
+    const t = audio.ctx.currentTime + (when || 0);
+    const o = audio.ctx.createOscillator();
+    const g = audio.ctx.createGain();
+    o.type = type || "sine";
+    o.frequency.setValueAtTime(freq, t);
+    if (freq2) o.frequency.exponentialRampToValueAtTime(freq2, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol || 0.15, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(audio.ctx.destination);
+    o.start(t); o.stop(t + dur + 0.03);
+  }
+  function sfx(name) {
+    if (!audio.ctx || audio.muted) return;
+    switch (name) {
+      case "grab":  tone(660, 0.10, "square", 0.12); tone(880, 0.10, "square", 0.10, 0.05); break;
+      case "coin":  tone(988, 0.08, "square", 0.12); tone(1319, 0.12, "square", 0.11, 0.07); break;
+      case "feed":  tone(523, 0.12, "sine", 0.18); tone(659, 0.12, "sine", 0.18, 0.10);
+                    tone(784, 0.18, "sine", 0.18, 0.20); break;
+      case "eat":   tone(420, 0.09, "triangle", 0.14); tone(520, 0.09, "triangle", 0.12, 0.05); break;
+      case "shoo":  tone(440, 0.30, "sawtooth", 0.12, 0, 160); break;
+      case "disguise": tone(300, 0.10, "triangle", 0.14); tone(600, 0.12, "triangle", 0.12, 0.08); break;
+      case "win":   [523, 659, 784, 1046].forEach((f, i) => tone(f, 0.22, "sine", 0.2, i * 0.12)); break;
+      case "tap":   tone(540, 0.05, "square", 0.08); break;
+    }
+  }
+
+  // ---------- Particles (floating juice) ----------
+  const particles = [];
+  function spawnParticle(p) { particles.push(p); }
+  function burstHearts(x, y) {
+    for (let i = 0; i < 4; i++) {
+      spawnParticle({ x: x + (Math.random() * 24 - 12), y, vx: (Math.random() - 0.5) * 12,
+        vy: -28 - Math.random() * 16, life: 1.1, max: 1.1, text: "💚", size: 16 });
+    }
+  }
+  function burstSparkle(x, y, text) {
+    if (text) spawnParticle({ x, y, vx: 0, vy: -26, life: 0.9, max: 0.9, text, size: 16 });
+    for (let i = 0; i < 6; i++) {
+      const a = Math.random() * Math.PI * 2;
+      spawnParticle({ x, y, vx: Math.cos(a) * 30, vy: Math.sin(a) * 30 - 10,
+        life: 0.5, max: 0.5, dot: "#fff3b0", size: 3 });
+    }
+  }
+  function burstDust(x, y) {
+    for (let i = 0; i < 8; i++) {
+      const a = Math.random() * Math.PI * 2;
+      spawnParticle({ x, y, vx: Math.cos(a) * 36, vy: Math.sin(a) * 20 - 6,
+        life: 0.6, max: 0.6, dot: "rgba(220,210,180,0.9)", size: 4 });
+    }
+  }
+  function updateParticles(dt) {
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 40 * dt; p.life -= dt;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+  }
+  function drawParticles() {
+    for (const p of particles) {
+      const a = Math.max(0, p.life / p.max);
+      ctx.globalAlpha = a;
+      if (p.text) {
+        ctx.font = `${p.size}px serif`;
+        ctx.textAlign = "center";
+        ctx.fillText(p.text, p.x, p.y);
+      } else {
+        ctx.fillStyle = p.dot;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
   }
 
   // ---------- Game state ----------
@@ -505,6 +598,8 @@
         player.suspicion = clamp(player.suspicion + 6, 0, 100);
       }
       toast(`${FOOD[f.kind].emoji} Grabbed a ${FOOD[f.kind].name}!`);
+      sfx("grab");
+      burstSparkle(f.x, f.y, FOOD[f.kind].emoji);
       return;
     }
 
@@ -522,6 +617,8 @@
       const count = player.backpack.length;
       player.backpack = [];
       toast(`🪙 Sold ${count} item(s) for ${total} coins!`);
+      sfx("coin");
+      burstSparkle(playerCenter().x, playerCenter().y - 30, `+${total} 🪙`);
       return;
     }
 
@@ -539,6 +636,8 @@
       kid.fed = clamp(kid.fed + FOOD[item.k].hunger * 2.2, 0, 100);
       player.backpack.splice(item.i, 1);
       toast(`${FOOD[item.k].emoji} ${kid.name} munches happily! 💚`);
+      sfx("feed");
+      burstHearts(kid.x, kid.y - 20);
       checkWin();
       return;
     }
@@ -549,6 +648,7 @@
   function handleDisguise() {
     if (nearRect(laundry, 46)) {
       player.disguised = !player.disguised;
+      sfx("disguise");
       toast(player.disguised
         ? "🧢 Disguise on — you almost look like a camper."
         : "🦶 Disguise off — free to be furry.");
@@ -573,6 +673,8 @@
     player.energy = clamp(player.energy + 6, 0, 100);
     player.backpack.splice(item.i, 1);
     toast(`${FOOD[item.k].emoji} You ate a ${FOOD[item.k].name}. Yum.`);
+    sfx("eat");
+    burstSparkle(playerCenter().x, playerCenter().y - 26, "😋");
   }
 
   // ---------- Win / lose ----------
@@ -583,14 +685,18 @@
     player.caughtFlash = 1;
     player.suspicion = 0;
     for (const r of rangers) r.alert = 0;
+    sfx("shoo");
+    burstDust(player.x + player.w / 2, player.y + player.h);
     // walk him back to the safety of the den entrance
     player.x = den.x + den.w / 2 - player.w / 2;
     player.y = den.y + den.h + 30;
+    burstDust(player.x + player.w / 2, player.y + player.h);
     toast("🚶 The ranger waved you off — scoot back home and try sneaking again!", 2800);
   }
 
   function checkWin() {
     if (kids.every((k) => k.fed >= 100)) {
+      sfx("win");
       endGame("🌟 Best Papa in Pine Hollow!",
         `Mama and both kids are full and happy. You finished Day ${day} with ` +
         `${player.coins} coins and a belly full of pride. The legend lives on. 🦶`);
@@ -620,6 +726,7 @@
 
     const mag = Math.hypot(dx, dy);
     const moving = mag > 0.06;
+    player.moving = moving;
     if (moving) {
       const dirX = dx / mag, dirY = dy / mag;
       player.dir = { x: dirX, y: dirY };
@@ -677,9 +784,15 @@
     dayTime += (24 * 60 / DAY_LENGTH) * dt;
     if (dayTime >= 24 * 60) { dayTime -= 24 * 60; day++; }
 
-    // --- camera follow ---
-    cam.x = clamp(player.x + player.w / 2 - VIEW_W / 2, 0, WORLD_W - VIEW_W);
-    cam.y = clamp(player.y + player.h / 2 - VIEW_H / 2, 0, WORLD_H - VIEW_H);
+    // --- particles ---
+    updateParticles(dt);
+
+    // --- smooth camera follow ---
+    const tcx = clamp(player.x + player.w / 2 - VIEW_W / 2, 0, WORLD_W - VIEW_W);
+    const tcy = clamp(player.y + player.h / 2 - VIEW_H / 2, 0, WORLD_H - VIEW_H);
+    const ease = Math.min(1, dt * 7);
+    cam.x += (tcx - cam.x) * ease;
+    cam.y += (tcy - cam.y) * ease;
 
     if (player.caughtFlash > 0) player.caughtFlash = Math.max(0, player.caughtFlash - dt);
   }
@@ -711,6 +824,7 @@
     drawRangers();
     drawPlayer();
     drawTrees(true); // canopies on top for depth
+    drawParticles();
 
     ctx.restore();
 
@@ -1051,15 +1165,20 @@
 
   function drawPlayer() {
     const cx = player.x + player.w / 2;
-    const baseY = player.y + player.h + 6;
+    // gentle walk bob, soft idle breathing when still
+    const bob = player.moving
+      ? Math.abs(Math.sin(player.step * 0.22)) * 4
+      : Math.sin(performance.now() * 0.003) * 1.2 + 1.2;
+    const baseY = player.y + player.h + 6 - bob;
+    const flip = player.dir.x < -0.15;
     if (spriteReady("bigfoot")) {
       const th = 84;
-      // soft shadow under feet
+      // soft shadow under feet (stays on the ground, ignores bob)
       ctx.fillStyle = "rgba(0,0,0,0.22)";
       ctx.beginPath();
-      ctx.ellipse(cx, baseY - 4, 22, 7, 0, 0, Math.PI * 2);
+      ctx.ellipse(cx, player.y + player.h + 2, 22, 7, 0, 0, Math.PI * 2);
       ctx.fill();
-      drawSpriteH("bigfoot", cx, baseY, th);
+      drawSpriteH("bigfoot", cx, baseY, th, flip);
       if (player.disguised) {
         // pop a camper cap on his head
         ctx.font = "26px serif";
@@ -1272,8 +1391,13 @@
 
   // ---------- Start / restart ----------
   function startGame() {
+    initAudio(); // first user gesture — unlock audio
     buildWorld();
     spawnEntities();
+    particles.length = 0;
+    // snap camera onto Bigfoot so there's no opening pan
+    cam.x = clamp(player.x + player.w / 2 - VIEW_W / 2, 0, WORLD_W - VIEW_W);
+    cam.y = clamp(player.y + player.h / 2 - VIEW_H / 2, 0, WORLD_H - VIEW_H);
     document.getElementById("overlay").classList.add("hidden");
     document.getElementById("end-overlay").classList.add("hidden");
     state = State.PLAY;
@@ -1283,6 +1407,22 @@
 
   document.getElementById("start-btn").addEventListener("click", startGame);
   document.getElementById("restart-btn").addEventListener("click", startGame);
+
+  // Sound on/off (remembered across sessions).
+  const muteBtn = document.getElementById("mute-btn");
+  if (muteBtn) {
+    try { audio.muted = localStorage.getItem("sb-muted") === "1"; } catch (e) {}
+    muteBtn.textContent = audio.muted ? "🔇" : "🔊";
+    const toggleMute = (e) => {
+      if (e) e.preventDefault();
+      audio.muted = !audio.muted;
+      muteBtn.textContent = audio.muted ? "🔇" : "🔊";
+      try { localStorage.setItem("sb-muted", audio.muted ? "1" : "0"); } catch (er) {}
+      if (!audio.muted) { initAudio(); sfx("tap"); }
+    };
+    muteBtn.addEventListener("click", toggleMute);
+    muteBtn.addEventListener("touchstart", toggleMute, { passive: false });
+  }
 
   // ---------- Touch controls (iPad / mobile) ----------
   function setupTouchControls() {
