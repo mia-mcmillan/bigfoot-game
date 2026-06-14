@@ -24,6 +24,9 @@ const SPRITE_SIZES = {
   ranger: { h: 210 },
   tent: { w: 240 },
   tree: { h: 240 },
+  store: { w: 260 },
+  table: { w: 150 },
+  den: { w: 320 },
 };
 
 // Remove the flat magenta backdrop -> transparency, with a soft edge + despill.

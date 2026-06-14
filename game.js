@@ -34,6 +34,9 @@
     ranger: "assets/sprites/ranger.png",
     tent: "assets/sprites/tent.png",
     tree: "assets/sprites/tree.png",
+    store: "assets/sprites/store.png",
+    table: "assets/sprites/table.png",
+    den: "assets/sprites/den.png",
   };
   const SPRITES = {};
   if (typeof Image !== "undefined") {
@@ -102,6 +105,25 @@
       case "win":   [523, 659, 784, 1046].forEach((f, i) => tone(f, 0.22, "sine", 0.2, i * 0.12)); break;
       case "tap":   tone(540, 0.05, "square", 0.08); break;
     }
+  }
+
+  // Gentle ambient loop (soft pentatonic). Respects the mute toggle.
+  const music = { on: false, timer: null, step: 0 };
+  const MELODY = [523, 659, 784, 659, 587, 784, 880, 784, 523, 659, 784, 1046, 880, 784, 659, 587];
+  const BASS = [131, 131, 196, 196, 175, 175, 220, 220];
+  function musicTick() {
+    if (!music.on) return;
+    if (audio.ctx && !audio.muted) {
+      tone(MELODY[music.step % MELODY.length], 0.42, "triangle", 0.045);
+      if (music.step % 2 === 0) tone(BASS[(music.step / 2) % BASS.length], 0.7, "sine", 0.05);
+    }
+    music.step++;
+    music.timer = setTimeout(musicTick, 470);
+  }
+  function startMusic() {
+    if (music.on || !audio.ctx) return;
+    music.on = true;
+    musicTick();
   }
 
   // ---------- Particles (floating juice) ----------
@@ -368,6 +390,7 @@
     player.coins = 0;
     player.backpack = [];
     player.disguised = false;
+    player.grabbedAny = false;
 
     // Family inside the den: Mama Bigfoot + two kids
     kids.length = 0;
@@ -573,6 +596,17 @@
     return best;
   }
 
+  function nearestFoodAny() {
+    const pc = playerCenter();
+    let best = null, bestD = Infinity;
+    for (const f of foodSpawns) {
+      if (f.taken) continue;
+      const d = dist(pc.x, pc.y, f.x, f.y);
+      if (d < bestD) { bestD = d; best = f; }
+    }
+    return best;
+  }
+
   function playerCenter() {
     return { x: player.x + player.w / 2, y: player.y + player.h / 2 };
   }
@@ -600,6 +634,7 @@
       toast(`${FOOD[f.kind].emoji} Grabbed a ${FOOD[f.kind].name}!`);
       sfx("grab");
       burstSparkle(f.x, f.y, FOOD[f.kind].emoji);
+      player.grabbedAny = true;
       return;
     }
 
@@ -825,8 +860,11 @@
     drawPlayer();
     drawTrees(true); // canopies on top for depth
     drawParticles();
+    drawGuidanceWorld();
 
     ctx.restore();
+
+    drawGuidanceEdge();
 
     // night overlay
     if (dark > 0.01) {
@@ -896,20 +934,24 @@
   }
 
   function drawDen() {
-    // grassy mound
-    ctx.fillStyle = "#4a6b3a";
-    roundRect(den.x - 30, den.y - 30, den.w + 60, den.h + 60, 24);
-    ctx.fill();
-    // cave mouth
-    ctx.fillStyle = "#241a12";
-    roundRect(den.x + 10, den.y + 10, den.w - 20, den.h - 20, 18);
-    ctx.fill();
-    // rocks
-    for (const o of obstacles) {
-      if (o.type === "rock") {
-        ctx.fillStyle = "#7d7363";
-        roundRect(o.x, o.y, o.w, o.h, 8);
-        ctx.fill();
+    if (spriteReady("den")) {
+      drawSpriteW("den", den.x + den.w / 2, den.y + den.h + 12, den.w + 100);
+    } else {
+      // grassy mound
+      ctx.fillStyle = "#4a6b3a";
+      roundRect(den.x - 30, den.y - 30, den.w + 60, den.h + 60, 24);
+      ctx.fill();
+      // cave mouth
+      ctx.fillStyle = "#241a12";
+      roundRect(den.x + 10, den.y + 10, den.w - 20, den.h - 20, 18);
+      ctx.fill();
+      // rocks
+      for (const o of obstacles) {
+        if (o.type === "rock") {
+          ctx.fillStyle = "#7d7363";
+          roundRect(o.x, o.y, o.w, o.h, 8);
+          ctx.fill();
+        }
       }
     }
     // sign
@@ -921,25 +963,29 @@
 
   function drawBuildings() {
     for (const b of buildings) {
-      // shadow
-      ctx.fillStyle = "rgba(0,0,0,0.18)";
-      roundRect(b.x + 6, b.y + 10, b.w, b.h, 10);
-      ctx.fill();
-      // body
-      ctx.fillStyle = b.color;
-      roundRect(b.x, b.y, b.w, b.h - 40, 8);
-      ctx.fill();
-      // roof
-      ctx.fillStyle = "#5a3418";
-      ctx.beginPath();
-      ctx.moveTo(b.x - 12, b.y);
-      ctx.lineTo(b.x + b.w / 2, b.y - 40);
-      ctx.lineTo(b.x + b.w + 12, b.y);
-      ctx.closePath();
-      ctx.fill();
-      // door
-      ctx.fillStyle = "#2a1b0e";
-      ctx.fillRect(b.x + b.w / 2 - 18, b.y + b.h - 80, 36, 40);
+      if (spriteReady("store")) {
+        drawSpriteW("store", b.x + b.w / 2, b.y + b.h + 6, b.w + 70);
+      } else {
+        // shadow
+        ctx.fillStyle = "rgba(0,0,0,0.18)";
+        roundRect(b.x + 6, b.y + 10, b.w, b.h, 10);
+        ctx.fill();
+        // body
+        ctx.fillStyle = b.color;
+        roundRect(b.x, b.y, b.w, b.h - 40, 8);
+        ctx.fill();
+        // roof
+        ctx.fillStyle = "#5a3418";
+        ctx.beginPath();
+        ctx.moveTo(b.x - 12, b.y);
+        ctx.lineTo(b.x + b.w / 2, b.y - 40);
+        ctx.lineTo(b.x + b.w + 12, b.y);
+        ctx.closePath();
+        ctx.fill();
+        // door
+        ctx.fillStyle = "#2a1b0e";
+        ctx.fillRect(b.x + b.w / 2 - 18, b.y + b.h - 80, 36, 40);
+      }
       // label
       ctx.fillStyle = "#fff";
       ctx.font = "bold 15px Trebuchet MS";
@@ -1016,11 +1062,15 @@
     for (const t of tents) {
       // picnic table
       const tb = t.table;
-      ctx.fillStyle = "#9c6b3f";
-      roundRect(tb.x, tb.y, tb.w, tb.h, 4);
-      ctx.fill();
-      ctx.fillStyle = "#7a5230";
-      ctx.fillRect(tb.x, tb.y + tb.h - 8, tb.w, 8);
+      if (spriteReady("table")) {
+        drawSpriteW("table", tb.x + tb.w / 2, tb.y + tb.h + 12, tb.w + 28);
+      } else {
+        ctx.fillStyle = "#9c6b3f";
+        roundRect(tb.x, tb.y, tb.w, tb.h, 4);
+        ctx.fill();
+        ctx.fillStyle = "#7a5230";
+        ctx.fillRect(tb.x, tb.y + tb.h - 8, tb.w, 8);
+      }
       // tent
       if (spriteReady("tent")) {
         drawSpriteW("tent", t.x + t.w / 2, t.y + t.h + 8, t.w + 36);
@@ -1280,6 +1330,44 @@
     }
   }
 
+  // Gentle "go here" guidance for new/young players, until the first grab.
+  function drawGuidanceWorld() {
+    if (state !== State.PLAY || player.grabbedAny) return;
+    const f = nearestFoodAny();
+    if (!f) return;
+    const t = performance.now() * 0.005;
+    const pr = 16 + (Math.sin(t) * 0.5 + 0.5) * 8;
+    ctx.strokeStyle = "rgba(255,224,130,0.85)";
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(f.x, f.y, pr, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = "#ffe082";
+    ctx.font = "bold 22px serif";
+    ctx.textAlign = "center";
+    ctx.fillText("⬇", f.x, f.y - 22 + Math.sin(t) * 4);
+  }
+  function drawGuidanceEdge() {
+    if (state !== State.PLAY || player.grabbedAny) return;
+    const f = nearestFoodAny();
+    if (!f) return;
+    const sx = f.x - cam.x, sy = f.y - cam.y;
+    const m = 44;
+    if (sx >= m && sx <= VIEW_W - m && sy >= m && sy <= VIEW_H - m) return; // on-screen
+    const ang = Math.atan2(sy - VIEW_H / 2, sx - VIEW_W / 2);
+    const ex = clamp(sx, m, VIEW_W - m), ey = clamp(sy, m, VIEW_H - m);
+    ctx.save();
+    ctx.translate(ex, ey);
+    ctx.rotate(ang);
+    ctx.fillStyle = "rgba(255,224,130,0.95)";
+    ctx.beginPath();
+    ctx.moveTo(15, 0); ctx.lineTo(-9, -10); ctx.lineTo(-9, 10);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+    ctx.fillStyle = "#ffe082";
+    ctx.font = "bold 12px Trebuchet MS";
+    ctx.textAlign = "center";
+    ctx.fillText("snacks!", ex, ey - 16);
+  }
+
   function drawInteractHint() {
     let hint = null;
     const f = nearestFood();
@@ -1392,6 +1480,7 @@
   // ---------- Start / restart ----------
   function startGame() {
     initAudio(); // first user gesture — unlock audio
+    startMusic();
     buildWorld();
     spawnEntities();
     particles.length = 0;

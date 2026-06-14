@@ -74,6 +74,24 @@ const ASSETS = {
     prompt: `A single round pine/fir tree seen slightly from above, game prop, ` +
       `centered, on a solid flat magenta (#ff00ff) background. ${STYLE}.`,
   },
+  store: {
+    aspect: "1:1",
+    prompt: `A small charming wooden general store / camp shop cabin with a ` +
+      `pitched roof and a hanging sign, front view, game building prop, ` +
+      `centered, on a solid flat magenta (#ff00ff) background. ${STYLE}.`,
+  },
+  table: {
+    aspect: "1:1",
+    prompt: `A wooden picnic table with attached benches seen from a slight ` +
+      `top-down angle, game prop, centered, on a solid flat magenta ` +
+      `(#ff00ff) background. ${STYLE}.`,
+  },
+  den: {
+    aspect: "1:1",
+    prompt: `A cozy Bigfoot cave den: a dark inviting cave opening in a green ` +
+      `mossy rocky hill, seen slightly from above, game prop, centered, on a ` +
+      `solid flat magenta (#ff00ff) background. ${STYLE}.`,
+  },
 };
 
 if (!KEY) {
