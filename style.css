@@ -1,0 +1,217 @@
+:root {
+  --ink: #1b2417;
+  --paper: #f4efe2;
+  --forest: #3a5a40;
+  --moss: #588157;
+  --leaf: #a3b18a;
+  --bark: #6f4e37;
+  --gold: #e9c46a;
+  --danger: #e76f51;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: #14210f;
+  color: #f1f3ec;
+  font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+#game-shell {
+  position: relative;
+  width: 960px;
+  height: 600px;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.6);
+  border: 3px solid #0c1508;
+}
+
+canvas {
+  display: block;
+  image-rendering: pixelated;
+  background: #6a994e;
+}
+
+/* ---------- HUD ---------- */
+#hud {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 230px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.stat { display: flex; align-items: center; gap: 8px; }
+
+.stat .label {
+  font-size: 12px;
+  width: 92px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+.bar {
+  flex: 1;
+  height: 12px;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 7px;
+  overflow: hidden;
+  border: 1px solid rgba(0,0,0,0.5);
+}
+
+.fill { height: 100%; width: 100%; transition: width 0.2s linear; }
+.fill.hunger { background: linear-gradient(90deg, #f4a261, #e76f51); }
+.fill.energy { background: linear-gradient(90deg, #90e0ef, #00b4d8); }
+.fill.suspicion { background: linear-gradient(90deg, #ffd166, #e63946); width: 0; }
+
+#counters {
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+  margin-top: 4px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+#disguise-indicator {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #ffe8a3;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+/* ---------- Family panel ---------- */
+#family-panel {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 200px;
+  background: rgba(20, 33, 15, 0.78);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  user-select: none;
+}
+
+#family-panel h3 { font-size: 14px; margin-bottom: 6px; }
+
+.family-member {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0;
+}
+
+.family-member .mini-bar {
+  flex: 1;
+  height: 8px;
+  background: rgba(0,0,0,0.4);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.family-member .mini-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f4a261, #e76f51);
+  transition: width 0.3s;
+}
+
+.hint { font-size: 11px; opacity: 0.7; margin-top: 6px; }
+
+/* ---------- Ticker ---------- */
+#ticker {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+}
+
+.toast {
+  background: rgba(20, 33, 15, 0.88);
+  border: 1px solid rgba(255,255,255,0.18);
+  padding: 6px 14px;
+  border-radius: 18px;
+  font-size: 13px;
+  animation: pop 0.25s ease;
+}
+
+@keyframes pop {
+  from { transform: scale(0.85); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+/* ---------- Screens ---------- */
+.screen {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 14, 6, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+
+.panel {
+  width: 600px;
+  max-width: 90%;
+  background: linear-gradient(160deg, #2d3a22, #1a2412);
+  border: 2px solid var(--moss);
+  border-radius: 16px;
+  padding: 28px 34px;
+  text-align: center;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+}
+
+.panel h1 { font-size: 38px; letter-spacing: 1px; margin-bottom: 4px; }
+.tagline { color: var(--leaf); font-style: italic; margin-bottom: 16px; }
+
+.story { text-align: left; font-size: 14px; line-height: 1.5; margin-bottom: 16px; }
+.story p { margin-bottom: 8px; }
+.story strong { color: var(--gold); }
+
+.controls-help {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 16px;
+  font-size: 13px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+kbd {
+  display: inline-block;
+  background: #11180c;
+  border: 1px solid #4a5d38;
+  border-radius: 5px;
+  padding: 1px 7px;
+  font-size: 12px;
+  margin-right: 3px;
+}
+
+button {
+  background: var(--gold);
+  color: #2a2410;
+  border: none;
+  font-weight: bold;
+  font-size: 16px;
+  padding: 12px 28px;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: transform 0.1s, filter 0.1s;
+}
+button:hover { transform: translateY(-2px); filter: brightness(1.08); }
+
+.hidden { display: none !important; }

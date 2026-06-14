@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sneaky Bigfoot</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="game-shell">
+    <canvas id="game" width="960" height="600"></canvas>
+
+    <!-- HUD -->
+    <div id="hud">
+      <div class="stat">
+        <span class="label">🍖 Hunger</span>
+        <div class="bar"><div id="hunger-fill" class="fill hunger"></div></div>
+      </div>
+      <div class="stat">
+        <span class="label">⚡ Energy</span>
+        <div class="bar"><div id="energy-fill" class="fill energy"></div></div>
+      </div>
+      <div class="stat">
+        <span class="label">👀 Suspicion</span>
+        <div class="bar"><div id="suspicion-fill" class="fill suspicion"></div></div>
+      </div>
+      <div id="counters">
+        <span id="coins">🪙 0</span>
+        <span id="carry">🎒 0/6</span>
+        <span id="day-clock">🕑 Day 1 · 08:00</span>
+      </div>
+      <div id="disguise-indicator" class="hidden">🧢 Disguised</div>
+    </div>
+
+    <!-- Family panel -->
+    <div id="family-panel">
+      <h3>🏕️ The Family</h3>
+      <div id="family-list"></div>
+      <p class="hint">Bring food back to the den to feed your kids!</p>
+    </div>
+
+    <!-- Message ticker -->
+    <div id="ticker"></div>
+
+    <!-- Start / story screen -->
+    <div id="overlay" class="screen">
+      <div class="panel">
+        <h1>🦶 SNEAKY BIGFOOT</h1>
+        <p class="tagline">A cryptid's life in the great outdoors</p>
+        <div class="story">
+          <p>Deep in <strong>Pine Hollow</strong>, a family of Sasquatch lives hidden in a
+          mossy den. You are <strong>Papa Bigfoot</strong> — gentle giant, devoted parent,
+          and very, very hungry.</p>
+          <p>The campers left their coolers unguarded. The ranger is napping (mostly).
+          Sneak through the campground, swipe snacks, earn a few coins, stay out of
+          sight — and bring dinner home to your little ones.</p>
+        </div>
+        <div class="controls-help">
+          <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / Arrows — Move</div>
+          <div><kbd>Shift</kbd> — Sneak (quiet & low suspicion)</div>
+          <div><kbd>X</kbd> — Sprint (burns energy)</div>
+          <div><kbd>E</kbd> — Grab / Feed kids / Sell</div>
+          <div><kbd>F</kbd> — Eat a snack yourself</div>
+          <div><kbd>Q</kbd> — Toss on disguise (at the laundry line)</div>
+        </div>
+        <button id="start-btn">Start Sneaking</button>
+      </div>
+    </div>
+
+    <!-- Caught / end screen -->
+    <div id="end-overlay" class="screen hidden">
+      <div class="panel">
+        <h1 id="end-title">Caught!</h1>
+        <p id="end-msg"></p>
+        <button id="restart-btn">Try Again</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
